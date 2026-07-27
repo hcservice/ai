@@ -40,7 +40,9 @@ input,select,textarea{font-family:inherit;font-size:16px}
 #splash{
   position:fixed;inset:0;z-index:999;background:#070E13;overflow:hidden;
   display:grid;place-items:center;
+  animation:splashAuto .65s 5s cubic-bezier(.6,0,.2,1) forwards;
 }
+@keyframes splashAuto{to{opacity:0;visibility:hidden;pointer-events:none;transform:scale(1.035)}}
 #splash.gone{animation:splashOut .65s cubic-bezier(.6,0,.2,1) forwards}
 @keyframes splashOut{to{opacity:0;visibility:hidden;transform:scale(1.035)}}
 #fx{position:absolute;inset:0;width:100%;height:100%}
@@ -256,7 +258,7 @@ select.inp{cursor:pointer;appearance:none;
 /* ══════════════════════════════════════
    ライセンス／セットアップ
    ══════════════════════════════════════ */
-#onb{display:none}
+#onb{display:block}
 .topbar{height:56px;background:var(--indigo-deep);color:#fff;display:flex;align-items:center;
   gap:14px;padding:0 18px;position:sticky;top:0;z-index:60}
 .brand{display:flex;align-items:center;gap:10px}
@@ -619,7 +621,7 @@ select.f-in{cursor:pointer;appearance:none;
 <!-- ══════════════ 起動画面 ══════════════ -->
 <div id="splash">
   <canvas id="fx"></canvas>
-  <div class="sp-stage">
+  <div class="sp-stage" onclick="endSplash()" style="cursor:pointer">
     <div class="sp-slit"></div>
 
     <div class="conv">
@@ -1204,9 +1206,10 @@ select.f-in{cursor:pointer;appearance:none;
 
 <script>
 /* ═══════════ 起動画面 ═══════════ */
-const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+const reduce=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches);
 let rafId=null,burst=[],burstAt=0;
 (function fxInit(){
+ try{
   const c=document.getElementById('fx'),x=c.getContext('2d');
   let w,h,dpr=Math.min(devicePixelRatio||1,2);
   const cols=[];
@@ -1272,21 +1275,22 @@ let rafId=null,burst=[],burstAt=0;
         c:Math.random()<.3?'#D53925':'#5BD9A4'});
     }
   },1850);
+ }catch(e){console.warn('背景演出をスキップしました',e)}
 })();
 /* レシートのハイライトを順に点ける */
-if(!reduce){
-  document.querySelectorAll('.sp-rec .lit').forEach((el,i)=>{
+try{
+  if(!reduce)document.querySelectorAll('.sp-rec .lit').forEach((el,i)=>{
     setTimeout(()=>{el.style.animationPlayState='running'},1050+i*230);
   });
-}
+}catch(e){}
 let splashTimer=setTimeout(endSplash,reduce?900:5000);
+
 function endSplash(){
   clearTimeout(splashTimer);clearTimeout(burstAt);
   const s=document.getElementById('splash');
-  if(s.classList.contains('gone'))return;
+  if(!s||s.classList.contains('gone'))return;
   s.classList.add('gone');
-  document.getElementById('onb').style.display='';
-  setTimeout(()=>{if(rafId)cancelAnimationFrame(rafId);s.remove()},700);
+  setTimeout(()=>{try{if(rafId)cancelAnimationFrame(rafId)}catch(e){};s.remove()},700);
 }
 
 /* ═══════════ データ ═══════════ */
@@ -1452,7 +1456,7 @@ function verify(){
 }
 function enterApp(role){
   document.getElementById('onb').style.display='none';
-  document.getElementById('app').style.display='';
+  document.getElementById('app').style.display='block';
   setMode(role,document.getElementById(role==='office'?'ms-o':'ms-f'));
   window.scrollTo(0,0);
 }
