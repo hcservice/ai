@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>経費らくらく ─ レシートを撮るだけで仕訳まで</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12181D;
+  --indigo:#1C3D5A;
+  --indigo-deep:#132B40;
+  --vermilion:#D0402F;
+  --vermilion-deep:#A82F21;
+  --verify:#1F7A5C;
+  --paper:#F3F3EE;
+  --card:#FFFFFF;
+  --rule:#DEDBD2;
+  --rule-soft:#EBE9E2;
+  --muted:#79746B;
+  --muted-2:#A8A399;
+  --amber:#B8791C;
+
+  --font-ui:"Zen Kaku Gothic New",-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;
+  --font-num:"Roboto Mono",ui-monospace,monospace;
+
+  --r-s:4px; --r-m:8px; --r-l:14px;
+  --shadow-1:0 1px 2px rgba(18,24,29,.06),0 2px 8px rgba(18,24,29,.04);
+  --shadow-2:0 4px 12px rgba(18,24,29,.08),0 12px 32px rgba(18,24,29,.10);
+  --shadow-3:0 24px 70px rgba(18,24,29,.28);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font-ui);
+  background:var(--paper);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  font-size:14px;line-height:1.6;
+  overflow-x:hidden;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:16px}
+:focus-visible{outline:2px solid var(--vermilion);outline-offset:2px;border-radius:2px}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ══════ ヘッダー ══════ */
+.topbar{
+  height:56px;background:var(--indigo-deep);color:#fff;
+  display:flex;align-items:center;gap:16px;padding:0 18px;
+  position:sticky;top:0;z-index:60;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.seal{
+  width:30px;height:30px;border-radius:6px;
+  background:var(--vermilion);color:#fff;
+  display:grid;place-items:center;
+  font-weight:900;font-size:15px;letter-spacing:-.06em;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.28);
+  flex:none;
+}
+.brand-name{font-weight:900;font-size:16.5px;letter-spacing:.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;color:#8FA8BE;letter-spacing:.14em;font-weight:500}
+.topbar-spacer{flex:1}
+
+.mode-switch{
+  display:flex;background:rgba(255,255,255,.09);border-radius:999px;padding:3px;gap:2px;
+}
+.mode-switch button{
+  padding:5px 15px;border-radius:999px;font-size:12px;font-weight:700;
+  color:#9DB3C7;transition:.18s;white-space:nowrap;
+}
+.mode-switch button.on{background:#fff;color:var(--indigo-deep)}
+
+.who{display:flex;align-items:center;gap:8px;font-size:12px;color:#B9C9D8}
+.avatar{
+  width:28px;height:28px;border-radius:50%;background:#3C6382;
+  display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:none;
+}
+
+/* ══════ レイアウト ══════ */
+.shell{display:flex;min-height:calc(100vh - 56px)}
+.side{
+  width:206px;flex:none;background:var(--indigo);
+  padding:16px 10px;display:flex;flex-direction:column;gap:2px;
+}
+.side-label{
+  font-size:9.5px;letter-spacing:.16em;color:#7794AD;font-weight:700;
+  padding:12px 10px 6px;
+}
+.nav{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:var(--r-m);
+  color:#C3D3E0;font-size:13.5px;font-weight:500;transition:.15s;width:100%;text-align:left;
+}
+.nav:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav.on{background:#fff;color:var(--indigo-deep);font-weight:700}
+.nav svg{width:17px;height:17px;flex:none;stroke-width:1.8}
+.nav .pill{
+  margin-left:auto;background:var(--vermilion);color:#fff;
+  font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;
+  font-family:var(--font-num);
+}
+.nav.on .pill{background:var(--vermilion)}
+.side-foot{
+  margin-top:auto;padding:12px 11px;border-top:1px solid rgba(255,255,255,.12);
+  font-size:10.5px;color:#7794AD;line-height:1.7;
+}
+.side-foot b{color:#C3D3E0;font-weight:700}
+
+.main{flex:1;min-width:0;padding:24px 28px 60px}
+.page{display:none}
+.page.on{display:block;animation:rise .3s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.h1{font-size:22px;font-weight:900;letter-spacing:.01em;margin:0 0 3px}
+.sub{font-size:12.5px;color:var(--muted);margin:0 0 20px}
+.head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.head-row .h1+.sub{margin-bottom:0}
+
+/* ══════ ボタン ══════ */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:var(--r-m);
+  font-size:13px;font-weight:700;transition:.15s;white-space:nowrap;
+}
+.btn svg{width:15px;height:15px;stroke-width:2}
+.btn-primary{background:var(--vermilion);color:#fff;box-shadow:0 1px 3px rgba(208,64,47,.3)}
+.btn-primary:hover{background:var(--vermilion-deep)}
+.btn-ink{background:var(--indigo);color:#fff}
+.btn-ink:hover{background:var(--indigo-deep)}
+.btn-ghost{background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)}
+.btn-ghost:hover{background:#FBFAF7;box-shadow:inset 0 0 0 1px var(--muted-2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* ══════ カード ══════ */
+.card{background:var(--card);border-radius:var(--r-l);box-shadow:var(--shadow-1);border:1px solid var(--rule-soft)}
+.card-h{
+  padding:14px 18px;border-bottom:1px solid var(--rule-soft);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.card-t{font-size:13.5px;font-weight:700;letter-spacing:.02em}
+.card-b{padding:18px}
+
+/* ══════ 未確認バナー ══════ */
+.inbox-banner{
+  background:linear-gradient(100deg,var(--indigo-deep),#22506F);
+  border-radius:var(--r-l);padding:18px 20px;margin-bottom:20px;
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  position:relative;overflow:hidden;
+}
+.inbox-banner::after{
+  content:"";position:absolute;right:-40px;top:-60px;width:230px;height:230px;
+  background:radial-gradient(circle,rgba(208,64,47,.34),transparent 65%);pointer-events:none;
+}
+.ib-num{font-family:var(--font-num);font-size:42px;font-weight:700;color:#fff;line-height:1;letter-spacing:-.03em}
+.ib-txt{color:#CBDCE9;font-size:12.5px;line-height:1.55}
+.ib-txt b{display:block;color:#fff;font-size:15px;font-weight:700;margin-bottom:2px}
+.ib-cta{margin-left:auto;position:relative;z-index:1}
+
+/* ══════ 統計 ══════ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:14px;margin-bottom:20px}
+.stat{background:var(--card);border-radius:var(--r-l);padding:16px 18px;border:1px solid var(--rule-soft);box-shadow:var(--shadow-1)}
+.stat-l{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin-bottom:7px}
+.stat-v{font-family:var(--font-num);font-size:25px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.stat-v small{font-size:13px;font-weight:500;color:var(--muted);margin-left:2px}
+.stat-d{font-size:11px;margin-top:7px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.up{color:var(--vermilion);font-weight:700;font-family:var(--font-num)}
+.down{color:var(--verify);font-weight:700;font-family:var(--font-num)}
+
+.grid-2{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;align-items:start}
+
+/* ══════ 科目別バー ══════ */
+.kmk{display:flex;flex-direction:column;gap:13px}
+.kmk-row{display:grid;grid-template-columns:88px 1fr 84px;align-items:center;gap:11px}
+.kmk-n{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kmk-bar{height:8px;background:var(--rule-soft);border-radius:999px;overflow:hidden}
+.kmk-fill{height:100%;border-radius:999px;transform-origin:left;animation:grow .8s cubic-bezier(.22,1,.36,1) both}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.kmk-v{font-family:var(--font-num);font-size:12px;text-align:right;font-weight:500}
+
+/* ══════ テーブル ══════ */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{
+  text-align:left;font-size:10.5px;letter-spacing:.08em;color:var(--muted);
+  font-weight:700;padding:9px 12px;border-bottom:1px solid var(--rule);white-space:nowrap;
+}
+td{padding:11px 12px;border-bottom:1px solid var(--rule-soft);vertical-align:middle}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:#FBFAF7}
+tbody tr:last-child td{border-bottom:none}
+.t-r{text-align:right}
+.money{font-family:var(--font-num);font-weight:500;white-space:nowrap}
+
+.tag{
+  display:inline-block;padding:2.5px 9px;border-radius:var(--r-s);
+  font-size:11px;font-weight:700;white-space:nowrap;
+}
+.tag-fixed{background:#E7F1EC;color:var(--verify)}
+.tag-check{background:#FBEAE7;color:var(--vermilion-deep)}
+.tag-draft{background:#F0EEE8;color:var(--muted)}
+.tag-warn{background:#FAF0DE;color:var(--amber)}
+.kmk-tag{
+  display:inline-block;padding:2.5px 9px;border-radius:var(--r-s);
+  background:#EDF1F5;color:var(--indigo);font-size:11px;font-weight:700;white-space:nowrap;
+}
+
+/* ══════ レシートカード（Inbox） ══════ */
+.inbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:16px}
+.rcard{
+  background:var(--card);border-radius:var(--r-m);border:1px solid var(--rule-soft);
+  box-shadow:var(--shadow-1);overflow:hidden;text-align:left;transition:.18s;width:100%;
+  display:flex;flex-direction:column;
+}
+.rcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-2);border-color:var(--rule)}
+.rcard-thumb{
+  height:132px;background:#EFEDE6;position:relative;overflow:hidden;
+  display:grid;place-items:center;border-bottom:1px solid var(--rule-soft);
+}
+.rcard-thumb .mini{
+  width:104px;background:#fff;padding:9px 8px;font-family:var(--font-num);font-size:6px;
+  line-height:1.45;color:#4A4A4A;transform:rotate(-2deg);
+  box-shadow:0 3px 10px rgba(0,0,0,.13);
+}
+.mini-h{text-align:center;font-weight:700;font-size:7px;border-bottom:1px dashed #BBB;padding-bottom:3px;margin-bottom:3px}
+.mini-l{display:flex;justify-content:space-between;gap:4px}
+.mini-t{display:flex;justify-content:space-between;border-top:1px solid #999;margin-top:3px;padding-top:3px;font-weight:700;font-size:7px}
+.rcard-b{padding:11px 13px;flex:1;display:flex;flex-direction:column;gap:5px}
+.rcard-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.rcard-date{font-family:var(--font-num);font-size:10.5px;color:var(--muted)}
+.rcard-amt{font-family:var(--font-num);font-size:16px;font-weight:700;letter-spacing:-.02em}
+.rcard-shop{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rcard-meta{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap}
+.who-chip{font-size:10.5px;color:var(--muted)}
+
+/* 信頼度 */
+.conf{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;font-family:var(--font-num)}
+.conf i{width:6px;height:6px;border-radius:50%;display:block}
+.conf-hi i{background:var(--verify)} .conf-hi{color:var(--verify)}
+.conf-mid i{background:var(--amber)} .conf-mid{color:var(--amber)}
+.conf-lo i{background:var(--vermilion)} .conf-lo{color:var(--vermilion)}
+
+/* ══════ 照合ビュー（主役） ══════ */
+.overlay{
+  position:fixed;inset:0;background:rgba(10,20,28,.72);z-index:100;
+  display:none;backdrop-filter:blur(3px);
+}
+.overlay.on{display:block;animation:fade .2s both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.match{
+  position:absolute;inset:24px;background:var(--paper);border-radius:16px;
+  box-shadow:var(--shadow-3);display:flex;flex-direction:column;overflow:hidden;
+  animation:pop .28s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes pop{from{opacity:0;transform:scale(.975) translateY(10px)}to{opacity:1;transform:none}}
+.match-h{
+  height:56px;flex:none;background:var(--card);border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;gap:14px;padding:0 18px;
+}
+.match-count{font-family:var(--font-num);font-size:12px;color:var(--muted);font-weight:500}
+.match-count b{color:var(--ink);font-size:15px;font-weight:700}
+.match-h-t{font-size:14px;font-weight:700}
+.match-body{flex:1;display:grid;grid-template-columns:minmax(300px,.85fr) 1fr;overflow:hidden}
+
+/* 左：レシート */
+.rec-pane{
+  background:#242E36;padding:26px;overflow:auto;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  background-image:radial-gradient(circle at 50% 0%,#31404B,#1E272E);
+}
+.rec-tools{display:flex;gap:6px;align-self:flex-end}
+.rec-tool{
+  width:30px;height:30px;border-radius:var(--r-s);background:rgba(255,255,255,.1);
+  color:#C6D3DC;display:grid;place-items:center;transition:.15s;
+}
+.rec-tool:hover{background:rgba(255,255,255,.2);color:#fff}
+.rec-tool svg{width:15px;height:15px;stroke-width:1.9}
+
+.receipt{
+  width:280px;background:#FCFBF7;color:#3A3A3A;padding:20px 18px 24px;
+  font-family:var(--font-num);font-size:10.5px;line-height:1.62;position:relative;
+  box-shadow:0 14px 44px rgba(0,0,0,.5);flex:none;
+}
+.receipt::before,.receipt::after{
+  content:"";position:absolute;left:0;right:0;height:7px;
+  background:repeating-linear-gradient(90deg,#FCFBF7 0 7px,transparent 7px 14px);
+}
+.receipt::before{top:-6px}
+.receipt::after{bottom:-6px;transform:scaleY(-1)}
+.rc-shop{text-align:center;font-size:13px;font-weight:700;letter-spacing:.04em;color:#222}
+.rc-addr{text-align:center;font-size:8.5px;color:#7A7A7A;margin-top:3px;line-height:1.5}
+.rc-sep{border-top:1px dashed #B5B0A5;margin:11px 0}
+.rc-line{display:flex;justify-content:space-between;gap:10px}
+.rc-total{
+  display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#1A1A1A;
+  border-top:2px solid #3A3A3A;border-bottom:1px solid #3A3A3A;padding:6px 0;margin:9px 0;
+}
+.rc-small{font-size:8.5px;color:#6F6F6F}
+
+/* 読み取りハイライト */
+.hl{position:relative;display:inline-block;padding:1px 3px;margin:-1px -3px;border-radius:2px;transition:.22s}
+.hl::after{
+  content:"";position:absolute;inset:0;border-radius:2px;
+  border:1.5px solid transparent;background:transparent;transition:.22s;pointer-events:none;
+}
+.hl.lit{background:rgba(208,64,47,.13)}
+.hl.lit::after{
+  border-color:var(--vermilion);
+  box-shadow:0 0 0 3px rgba(208,64,47,.16),0 0 18px rgba(208,64,47,.4);
+}
+.hl.lit>span{position:relative}
+
+/* 右：仕訳伝票 */
+.slip-pane{background:var(--paper);overflow:auto;padding:22px 26px}
+.slip{
+  background:var(--card);border-radius:var(--r-l);box-shadow:var(--shadow-1);
+  border:1px solid var(--rule-soft);overflow:hidden;max-width:600px;
+}
+.slip-h{
+  padding:13px 20px;background:var(--indigo-deep);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.slip-h-t{font-size:12.5px;font-weight:700;letter-spacing:.1em}
+.ai-chip{
+  display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);
+  padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:700;color:#D9E6F0;
+}
+.ai-chip i{width:5px;height:5px;border-radius:50%;background:#5BD9A4;display:block;animation:blink 1.9s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.28}}
+
+.f-row{
+  display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;
+  padding:11px 20px;border-bottom:1px solid var(--rule-soft);transition:background .15s;
+}
+.f-row:hover{background:#FBFAF7}
+.f-row.focus{background:#FDF4F2;box-shadow:inset 3px 0 0 var(--vermilion)}
+.f-l{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.f-c{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap}
+.f-in{
+  flex:1;min-width:110px;padding:7px 10px;border:1px solid var(--rule);border-radius:var(--r-s);
+  font-size:13.5px;background:var(--card);transition:.15s;color:var(--ink);
+}
+.f-in:focus{border-color:var(--indigo);box-shadow:0 0 0 3px rgba(28,61,90,.1);outline:none}
+.f-in.n{font-family:var(--font-num);font-weight:700;letter-spacing:-.01em}
+select.f-in{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%2379746B' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.seg{display:flex;background:#F0EEE8;border-radius:var(--r-s);padding:2px;gap:2px}
+.seg button{padding:5px 11px;border-radius:3px;font-size:11.5px;font-weight:700;color:var(--muted);transition:.13s}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow-1)}
+
+.slip-note{
+  padding:12px 20px;background:#FAF9F5;border-top:1px solid var(--rule-soft);
+  font-size:11.5px;color:var(--muted);display:flex;gap:9px;align-items:flex-start;line-height:1.6;
+}
+.slip-note svg{width:14px;height:14px;flex:none;margin-top:2px;stroke-width:2}
+
+.alert{
+  display:flex;gap:10px;padding:12px 14px;border-radius:var(--r-m);
+  font-size:12px;line-height:1.6;margin-bottom:16px;
+}
+.alert svg{width:16px;height:16px;flex:none;margin-top:1px;stroke-width:2}
+.alert b{display:block;margin-bottom:2px;font-size:12.5px}
+.alert-warn{background:#FDF6E8;color:#7A5410;box-shadow:inset 0 0 0 1px #F0DFB8}
+.alert-info{background:#EDF3F8;color:var(--indigo);box-shadow:inset 0 0 0 1px #CFDEEA}
+
+.match-f{
+  height:64px;flex:none;background:var(--card);border-top:1px solid var(--rule);
+  display:flex;align-items:center;gap:10px;padding:0 20px;
+}
+.match-f .spacer{flex:1}
+.kbd{
+  font-family:var(--font-num);font-size:10px;background:#F0EEE8;color:var(--muted);
+  padding:2px 6px;border-radius:3px;border:1px solid var(--rule);font-weight:700;
+}
+
+/* ══════ 現場モード（スマホ） ══════ */
+.field-wrap{
+  min-height:calc(100vh - 56px);background:#1A242C;
+  display:grid;place-items:center;padding:28px 16px;
+  background-image:radial-gradient(circle at 50% 22%,#2B3A46,#141C23 70%);
+}
+.phone{
+  width:352px;max-width:100%;background:var(--paper);border-radius:30px;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 9px #0D1419,0 0 0 10px #33424E;
+  display:flex;flex-direction:column;height:706px;position:relative;
+}
+.ph-bar{
+  height:34px;background:var(--indigo-deep);color:#fff;display:flex;align-items:center;
+  justify-content:space-between;padding:0 20px;font-size:10.5px;font-family:var(--font-num);flex:none;
+}
+.ph-head{
+  background:var(--indigo-deep);color:#fff;padding:2px 20px 18px;flex:none;
+}
+.ph-hi{font-size:11px;color:#8FA8BE}
+.ph-name{font-size:17px;font-weight:900;margin-top:1px}
+.ph-body{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column}
+
+.shoot{
+  width:100%;background:var(--card);border-radius:18px;padding:26px 20px;text-align:center;
+  box-shadow:var(--shadow-1);border:1px solid var(--rule-soft);transition:.18s;
+}
+.shoot:active{transform:scale(.985)}
+.shoot-ring{
+  width:92px;height:92px;border-radius:50%;background:var(--vermilion);margin:0 auto 15px;
+  display:grid;place-items:center;color:#fff;position:relative;
+  box-shadow:0 6px 20px rgba(208,64,47,.34);
+}
+.shoot-ring::before{
+  content:"";position:absolute;inset:-7px;border-radius:50%;
+  border:2px solid rgba(208,64,47,.3);animation:pulse 2.4s ease-out infinite;
+}
+@keyframes pulse{0%{transform:scale(.94);opacity:.9}70%{transform:scale(1.14);opacity:0}100%{opacity:0}}
+.shoot-ring svg{width:38px;height:38px;stroke-width:1.6}
+.shoot-t{font-size:16px;font-weight:900}
+.shoot-s{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+.ph-sec{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin:22px 0 9px}
+.ph-item{
+  background:var(--card);border-radius:var(--r-m);padding:12px 14px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;border:1px solid var(--rule-soft);
+}
+.ph-ic{
+  width:36px;height:36px;border-radius:9px;background:#EDF1F5;color:var(--indigo);
+  display:grid;place-items:center;flex:none;font-size:15px;
+}
+.ph-txt{flex:1;min-width:0}
+.ph-shop{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-sub{font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:1px}
+.ph-amt{font-family:var(--font-num);font-size:14px;font-weight:700}
+
+/* スキャン演出 */
+.scan-view{position:absolute;inset:0;background:#141C23;display:none;flex-direction:column;z-index:5}
+.scan-view.on{display:flex;animation:fade .2s both}
+.scan-stage{flex:1;display:grid;place-items:center;position:relative;overflow:hidden}
+.scan-paper{
+  width:186px;background:#FCFBF7;padding:16px 14px;font-family:var(--font-num);
+  font-size:8.5px;line-height:1.6;color:#3A3A3A;position:relative;
+  box-shadow:0 18px 50px rgba(0,0,0,.6);
+}
+.scan-line{
+  position:absolute;left:-10%;right:-10%;height:2px;
+  background:linear-gradient(90deg,transparent,#5BD9A4,transparent);
+  box-shadow:0 0 22px 5px rgba(91,217,164,.6);top:0;
+  animation:scanmove 1.5s cubic-bezier(.4,0,.6,1) infinite;
+}
+@keyframes scanmove{0%{top:2%}50%{top:97%}100%{top:2%}}
+.scan-status{
+  padding:20px 24px 26px;background:#141C23;color:#fff;flex:none;
+}
+.scan-t{font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px}
+.dots{display:inline-flex;gap:3px}
+.dots i{width:4px;height:4px;border-radius:50%;background:#5BD9A4;animation:bounce 1.1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}
+.dots i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{opacity:.28;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.scan-steps{margin-top:14px;display:flex;flex-direction:column;gap:9px}
+.scan-step{
+  display:flex;align-items:center;gap:10px;font-size:12px;color:#5E6E7A;
+  opacity:.4;transition:.35s;
+}
+.scan-step.done{opacity:1;color:#C9D6DF}
+.scan-step .chk{
+  width:17px;height:17px;border-radius:50%;border:1.5px solid #3E4C57;flex:none;
+  display:grid;place-items:center;transition:.3s;
+}
+.scan-step.done .chk{background:#5BD9A4;border-color:#5BD9A4}
+.scan-step .chk svg{width:10px;height:10px;stroke:#141C23;stroke-width:3.4;opacity:0;transition:.2s}
+.scan-step.done .chk svg{opacity:1}
+.scan-step .val{margin-left:auto;font-family:var(--font-num);font-weight:700;color:#fff;opacity:0;transition:.3s}
+.scan-step.done .val{opacity:1}
+
+.done-view{position:absolute;inset:0;background:var(--paper);display:none;flex-direction:column;z-index:6}
+.done-view.on{display:flex;animation:fade .25s both}
+.done-top{
+  background:var(--verify);color:#fff;padding:34px 24px 28px;text-align:center;flex:none;
+}
+.done-ic{
+  width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.2);margin:0 auto 13px;
+  display:grid;place-items:center;animation:pop .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+.done-ic svg{width:32px;height:32px;stroke-width:2.6}
+.done-t{font-size:19px;font-weight:900}
+.done-s{font-size:12px;opacity:.9;margin-top:3px}
+.done-body{padding:20px;flex:1;overflow:auto}
+.done-card{background:var(--card);border-radius:var(--r-m);border:1px solid var(--rule-soft);overflow:hidden}
+.done-row{display:flex;justify-content:space-between;gap:12px;padding:11px 15px;border-bottom:1px solid var(--rule-soft);font-size:13px}
+.done-row:last-child{border-bottom:none}
+.done-k{color:var(--muted);font-size:12px}
+.done-v{font-weight:700;text-align:right}
+
+/* ══════ エクスポート ══════ */
+.exp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.exp{
+  background:var(--card);border:1px solid var(--rule-soft);border-radius:var(--r-l);
+  padding:18px;text-align:left;transition:.16s;box-shadow:var(--shadow-1);width:100%;
+}
+.exp:hover{border-color:var(--indigo);transform:translateY(-2px);box-shadow:var(--shadow-2)}
+.exp-logo{
+  width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
+  font-weight:900;font-size:15px;color:#fff;margin-bottom:11px;letter-spacing:-.03em;
+}
+.exp-n{font-size:13.5px;font-weight:700}
+.exp-d{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.55}
+
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;
+  font-size:13px;font-weight:700;box-shadow:var(--shadow-3);z-index:200;
+  opacity:0;transition:.32s cubic-bezier(.22,1,.36,1);display:flex;align-items:center;gap:9px;
+  pointer-events:none;max-width:calc(100vw - 32px);
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast svg{width:16px;height:16px;stroke-width:2.4;color:#5BD9A4;flex:none}
+
+.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+.filters .f-in{flex:none;min-width:auto;font-size:13px}
+.search{position:relative;flex:1;min-width:180px}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted-2);stroke-width:2}
+.search input{width:100%;padding:8px 12px 8px 33px;border:1px solid var(--rule);border-radius:var(--r-s);font-size:13.5px;background:var(--card)}
+.search input:focus{border-color:var(--indigo);box-shadow:0 0 0 3px rgba(28,61,90,.1);outline:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+@media (max-width:1020px){
+  .grid-2{grid-template-columns:1fr}
+  .match-body{grid-template-columns:1fr;overflow:auto}
+  .rec-pane{padding:20px}
+}
+@media (max-width:760px){
+  .side{display:none}
+  .main{padding:18px 14px 40px}
+  .match{inset:0;border-radius:0}
+  .brand-sub{display:none}
+  .who span{display:none}
+  .ib-cta{margin-left:0;width:100%}
+  .ib-cta .btn{width:100%;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ ヘッダー ══════════ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="seal">経</div>
+    <div>
+      <div class="brand-name">経費らくらく</div>
+      <div class="brand-sub">POWERED BY KYOEI</div>
+    </div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <div class="mode-switch">
+    <button class="on" onclick="setMode('office',this)">経理の画面</button>
+    <button onclick="setMode('field',this)">現場の画面</button>
+  </div>
+  <div class="who">
+    <span>田中 経理</span>
+    <div class="avatar">田</div>
+  </div>
+</header>
+
+<!-- ══════════ 経理モード ══════════ -->
+<div id="office">
+<div class="shell">
+  <nav class="side">
+    <div class="side-label">メニュー</div>
+    <button class="nav on" onclick="go('dash',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      ダッシュボード
+    </button>
+    <button class="nav" onclick="go('inbox',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v12H4z"/><path d="M4 16l4-4h8l4 4"/><path d="M2 20h20"/></svg>
+      確認まち<span class="pill">12</span>
+    </button>
+    <button class="nav" onclick="go('list',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      経費一覧
+    </button>
+    <button class="nav" onclick="go('exp',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+      会計ソフトへ
+    </button>
+    <div class="side-label">かんり</div>
+    <button class="nav" onclick="go('set',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.35.4.64.73.83"/></svg>
+      科目・ルール
+    </button>
+    <div class="side-foot">
+      <b>2026年7月度</b><br>
+      締めまで あと5日<br>
+      未確定 12件
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ─── ダッシュボード ─── -->
+    <section class="page on" id="p-dash">
+      <div class="h1">おはようございます、田中さん</div>
+      <p class="sub">7月度の経費 ─ 締め日まであと5日</p>
+
+      <div class="inbox-banner">
+        <div class="ib-num">12</div>
+        <div class="ib-txt">
+          <b>確認まちのレシートがあります</b>
+          AIが仕訳まで済ませています。中身を見て確定してください。<br>
+          いま確認すると 約4分で終わります。
+        </div>
+        <div class="ib-cta">
+          <button class="btn btn-primary" onclick="openMatch(0)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            確認をはじめる
+          </button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-l">今月の経費</div>
+          <div class="stat-v">¥1,284,600</div>
+          <div class="stat-d"><span class="up">+12.4%</span> 先月比</div>
+        </div>
+        <div class="stat">
+          <div class="stat-l">確定ずみ</div>
+          <div class="stat-v">86<small>件</small></div>
+          <div class="stat-d">全98件中</div>
+        </div>
+        <div class="stat">
+          <div class="stat-l">立替の未精算</div>
+          <div class="stat-v">¥64,820</div>
+          <div class="stat-d">3名分</div>
+        </div>
+        <div class="stat">
+          <div class="stat-l">入力にかかった時間</div>
+          <div class="stat-v">18<small>分</small></div>
+          <div class="stat-d"><span class="down">−7.2時間</span> 手入力の場合と比べて</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-h">
+            <div class="card-t">最近の仕訳</div>
+            <button class="btn btn-ghost btn-sm" onclick="go('list',document.querySelectorAll('.nav')[2])">すべて見る</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>日付</th><th>取引先</th><th>勘定科目</th><th class="t-r">金額</th><th>状態</th></tr></thead>
+              <tbody id="recent-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><div class="card-t">勘定科目べつ（7月）</div></div>
+          <div class="card-b">
+            <div class="kmk" id="kmk-bars"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 確認まち ─── -->
+    <section class="page" id="p-inbox">
+      <div class="head-row">
+        <div>
+          <div class="h1">確認まち</div>
+          <p class="sub">AIの読み取り結果を見て、合っていれば確定するだけです</p>
+        </div>
+        <button class="btn btn-primary" onclick="openMatch(0)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          先頭から確認する
+        </button>
+      </div>
+      <div class="alert alert-warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <div>
+          <b>2件は登録番号（インボイス）が読み取れませんでした</b>
+          免税事業者の可能性があります。控除の扱いが変わるので、原本を見て判断してください。該当のカードに印をつけています。
+        </div>
+      </div>
+      <div class="inbox-grid" id="inbox-cards"></div>
+    </section>
+
+    <!-- ─── 経費一覧 ─── -->
+    <section class="page" id="p-list">
+      <div class="head-row">
+        <div>
+          <div class="h1">経費一覧</div>
+          <p class="sub">日付・金額・取引先で検索できます（電子帳簿保存法の検索要件に対応）</p>
+        </div>
+        <button class="btn btn-ghost" onclick="toast('CSVを書き出しました')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+          書き出す
+        </button>
+      </div>
+      <div class="filters">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" placeholder="取引先・摘要・金額で検索">
+        </div>
+        <select class="f-in"><option>2026年7月</option><option>2026年6月</option><option>2026年5月</option></select>
+        <select class="f-in"><option>すべての科目</option><option>材料費</option><option>車両費</option><option>消耗品費</option></select>
+        <select class="f-in"><option>すべての状態</option><option>確定ずみ</option><option>確認まち</option></select>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>日付</th><th>取引先</th><th>登録番号</th><th>勘定科目</th><th>摘要</th><th class="t-r">税抜</th><th class="t-r">消費税</th><th class="t-r">合計</th><th>提出者</th><th>状態</th></tr></thead>
+            <tbody id="list-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 会計ソフトへ ─── -->
+    <section class="page" id="p-exp">
+      <div class="h1">会計ソフトへ渡す</div>
+      <p class="sub">お使いの会計ソフトの形式でそのまま取り込めます</p>
+      <div class="alert alert-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div>
+          <b>7月度は確定ずみ86件、¥1,284,600 が対象です</b>
+          確認まちの12件は含まれません。すべて確定させてから書き出すと、月次がそのまま揃います。
+        </div>
+      </div>
+      <div class="exp-grid">
+        <button class="exp" onclick="toast('弥生会計 形式で書き出しました')">
+          <div class="exp-logo" style="background:#00A0B0">弥</div>
+          <div class="exp-n">弥生会計</div>
+          <div class="exp-d">仕訳日記帳インポート形式</div>
+        </button>
+        <button class="exp" onclick="toast('freee 形式で書き出しました')">
+          <div class="exp-logo" style="background:#2864F0">f</div>
+          <div class="exp-n">freee会計</div>
+          <div class="exp-d">取引インポート形式</div>
+        </button>
+        <button class="exp" onclick="toast('マネーフォワード 形式で書き出しました')">
+          <div class="exp-logo" style="background:#0054A6">MF</div>
+          <div class="exp-n">マネーフォワード</div>
+          <div class="exp-d">仕訳帳インポート形式</div>
+        </button>
+        <button class="exp" onclick="toast('勘定奉行 形式で書き出しました')">
+          <div class="exp-logo" style="background:#C0392B">奉</div>
+          <div class="exp-n">勘定奉行</div>
+          <div class="exp-d">仕訳伝票データ形式</div>
+        </button>
+        <button class="exp" onclick="toast('汎用CSVで書き出しました')">
+          <div class="exp-logo" style="background:#5A6B7A">CSV</div>
+          <div class="exp-n">汎用CSV</div>
+          <div class="exp-d">項目を自由に並べ替えできます</div>
+        </button>
+        <button class="exp" onclick="toast('PDFを作成しました')">
+          <div class="exp-logo" style="background:#1C3D5A">PDF</div>
+          <div class="exp-n">経費精算書 PDF</div>
+          <div class="exp-d">立替精算・稟議の添付用</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- ─── 科目・ルール ─── -->
+    <section class="page" id="p-set">
+      <div class="h1">科目・ルール</div>
+      <p class="sub">一度なおすと、次から同じ取引先は自動でその科目になります</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-h"><div class="card-t">おぼえたルール</div><span class="tag tag-fixed">自動学習</span></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>取引先に含まれる語</th><th>勘定科目</th><th class="t-r">適用回数</th></tr></thead>
+              <tbody id="rule-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t">使っている勘定科目</div></div>
+          <div class="card-b">
+            <div style="display:flex;flex-wrap:wrap;gap:7px" id="kmk-chips"></div>
+            <p style="font-size:11.5px;color:var(--muted);margin:16px 0 0;line-height:1.65">
+              御社の会計ソフトの科目コードに合わせて追加・変更できます。設定した科目だけがAIの選択肢になるので、変な科目が入りません。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<!-- ══════════ 現場モード ══════════ -->
+<div id="field" style="display:none">
+  <div class="field-wrap">
+    <div class="phone">
+      <div class="ph-bar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+      <div class="ph-head">
+        <div class="ph-hi">おつかれさまです</div>
+        <div class="ph-name">山本 蓮 さん</div>
+      </div>
+      <div class="ph-body">
+        <button class="shoot" onclick="startScan()">
+          <div class="shoot-ring">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <div class="shoot-t">レシートを撮る</div>
+          <div class="shoot-s">撮るだけで経理さんに届きます</div>
+        </button>
+
+        <div class="ph-sec">今月わたしが出したぶん ─ ¥38,410</div>
+        <div class="ph-item">
+          <div class="ph-ic">⛽</div>
+          <div class="ph-txt">
+            <div class="ph-shop">ENEOS 中百舌鳥SS</div>
+            <div class="ph-sub"><span class="tag tag-fixed">確定</span>7/24</div>
+          </div>
+          <div class="ph-amt">¥8,240</div>
+        </div>
+        <div class="ph-item">
+          <div class="ph-ic">🔧</div>
+          <div class="ph-txt">
+            <div class="ph-shop">コメリ 堺インター店</div>
+            <div class="ph-sub"><span class="tag tag-check">確認中</span>7/24</div>
+          </div>
+          <div class="ph-amt">¥12,430</div>
+        </div>
+        <div class="ph-item">
+          <div class="ph-ic">🅿️</div>
+          <div class="ph-txt">
+            <div class="ph-shop">タイムズ 堺東第3</div>
+            <div class="ph-sub"><span class="tag tag-fixed">確定</span>7/23</div>
+          </div>
+          <div class="ph-amt">¥1,100</div>
+        </div>
+        <div class="ph-item">
+          <div class="ph-ic">🎨</div>
+          <div class="ph-txt">
+            <div class="ph-shop">日本ペイント商事</div>
+            <div class="ph-sub"><span class="tag tag-fixed">確定</span>7/22</div>
+          </div>
+          <div class="ph-amt">¥16,640</div>
+        </div>
+      </div>
+
+      <!-- 解析中 -->
+      <div class="scan-view" id="scanView">
+        <div class="scan-stage">
+          <div class="scan-paper">
+            <div style="text-align:center;font-weight:700;font-size:10px">コメリ 堺インター店</div>
+            <div style="text-align:center;font-size:7px;color:#888;margin-top:2px">大阪府堺市中区東山◯◯</div>
+            <div style="border-top:1px dashed #BBB;margin:8px 0"></div>
+            <div style="display:flex;justify-content:space-between"><span>養生テープ 50mm</span><span>1,280</span></div>
+            <div style="display:flex;justify-content:space-between"><span>マスカー 550</span><span>2,480</span></div>
+            <div style="display:flex;justify-content:space-between"><span>刷毛セット</span><span>3,980</span></div>
+            <div style="display:flex;justify-content:space-between"><span>コーキング材 ×6</span><span>3,564</span></div>
+            <div style="border-top:1px solid #666;margin:7px 0;padding-top:5px;display:flex;justify-content:space-between;font-weight:700"><span>合計</span><span>12,430</span></div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+        <div class="scan-status">
+          <div class="scan-t">読み取っています<span class="dots"><i></i><i></i><i></i></span></div>
+          <div class="scan-steps">
+            <div class="scan-step" id="s1"><span class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg></span>お店の名前<span class="val">コメリ 堺インター店</span></div>
+            <div class="scan-step" id="s2"><span class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg></span>日付と金額<span class="val">7/24 ¥12,430</span></div>
+            <div class="scan-step" id="s3"><span class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg></span>登録番号と税率<span class="val">T3120… 10%</span></div>
+            <div class="scan-step" id="s4"><span class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg></span>勘定科目のわりあて<span class="val">消耗品費</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 完了 -->
+      <div class="done-view" id="doneView">
+        <div class="done-top">
+          <div class="done-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <div class="done-t">経理さんに届きました</div>
+          <div class="done-s">入力するものはもうありません</div>
+        </div>
+        <div class="done-body">
+          <div class="done-card">
+            <div class="done-row"><span class="done-k">お店</span><span class="done-v">コメリ 堺インター店</span></div>
+            <div class="done-row"><span class="done-k">日付</span><span class="done-v num">2026/07/24</span></div>
+            <div class="done-row"><span class="done-k">金額</span><span class="done-v num">¥12,430</span></div>
+            <div class="done-row"><span class="done-k">勘定科目</span><span class="done-v"><span class="kmk-tag">消耗品費</span></span></div>
+            <div class="done-row"><span class="done-k">摘要</span><span class="done-v" style="font-weight:500;font-size:12px">養生テープ・マスカー他</span></div>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:16px" onclick="closeScan()">つづけて撮る</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 照合ビュー ══════════ -->
+<div class="overlay" id="overlay">
+  <div class="match">
+    <div class="match-h">
+      <button class="btn btn-ghost btn-sm" onclick="closeMatch()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        とじる
+      </button>
+      <div class="match-h-t">レシートと見くらべる</div>
+      <div class="match-count"><b id="m-i">1</b> / 12件</div>
+    </div>
+
+    <div class="match-body">
+      <!-- 左：レシート -->
+      <div class="rec-pane">
+        <div class="rec-tools">
+          <button class="rec-tool" title="拡大"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></button>
+          <button class="rec-tool" title="回転"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 2v6h-6"/><path d="M21 13a9 9 0 11-3-7l3 3"/></svg></button>
+          <button class="rec-tool" title="原本を開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg></button>
+        </div>
+
+        <div class="receipt">
+          <div class="rc-shop"><span class="hl" id="h-shop"><span>コメリ 堺インター店</span></span></div>
+          <div class="rc-addr">大阪府堺市中区東山◯◯番地<br>TEL 072-◯◯◯-◯◯◯◯</div>
+          <div class="rc-sep"></div>
+          <div class="rc-line"><span class="hl" id="h-date"><span>2026年 7月24日(金) 17:42</span></span></div>
+          <div class="rc-sep"></div>
+          <div class="rc-line"><span>養生テープ 50mm</span><span>¥1,280</span></div>
+          <div class="rc-line"><span>マスカー 550 5本</span><span>¥2,480</span></div>
+          <div class="rc-line"><span>刷毛セット</span><span>¥3,980</span></div>
+          <div class="rc-line"><span>コーキング材 ×6</span><span>¥3,564</span></div>
+          <div class="rc-line"><span>ウエス 業務用</span><span>¥1,126</span></div>
+          <div class="rc-total"><span>合　計</span><span class="hl" id="h-amt"><span>¥12,430</span></span></div>
+          <div class="rc-line rc-small"><span class="hl" id="h-tax"><span>(10%対象 ¥11,300 税 ¥1,130)</span></span></div>
+          <div class="rc-line rc-small"><span>お預り</span><span>¥13,000</span></div>
+          <div class="rc-line rc-small"><span>お釣り</span><span>¥570</span></div>
+          <div class="rc-sep"></div>
+          <div class="rc-small" style="text-align:center">
+            <span class="hl" id="h-invoice"><span>登録番号 T3120001098765</span></span><br>
+            レジ 03　responsible 0428<br>
+            またのご来店をお待ちしております
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：仕訳伝票 -->
+      <div class="slip-pane">
+        <div class="alert alert-info" style="max-width:600px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <div>
+            <b>項目にさわると、レシートのどこを読んだか光ります</b>
+            数字が合っているかは、そこだけ見ればわかります。
+          </div>
+        </div>
+
+        <div class="slip">
+          <div class="slip-h">
+            <div class="slip-h-t">仕 訳 伝 票</div>
+            <div class="ai-chip"><i></i>AIが下書きしました</div>
+          </div>
+
+          <div class="f-row" onmouseenter="lite('h-date',this)" onmouseleave="dark()">
+            <div class="f-l">日付</div>
+            <div class="f-c">
+              <input class="f-in n" value="2026/07/24" style="max-width:150px">
+              <span class="conf conf-hi"><i></i>99%</span>
+            </div>
+          </div>
+
+          <div class="f-row" onmouseenter="lite('h-shop',this)" onmouseleave="dark()">
+            <div class="f-l">取引先</div>
+            <div class="f-c"><input class="f-in" value="コメリ 堺インター店"><span class="conf conf-hi"><i></i>97%</span></div>
+          </div>
+
+          <div class="f-row" onmouseenter="lite('h-amt',this)" onmouseleave="dark()">
+            <div class="f-l">合計金額</div>
+            <div class="f-c">
+              <input class="f-in n" value="¥12,430" style="max-width:150px">
+              <span class="conf conf-hi"><i></i>99%</span>
+            </div>
+          </div>
+
+          <div class="f-row" onmouseenter="lite('h-tax',this)" onmouseleave="dark()">
+            <div class="f-l">税率</div>
+            <div class="f-c">
+              <div class="seg">
+                <button class="on" onclick="seg(this)">10%</button>
+                <button onclick="seg(this)">8% 軽減</button>
+                <button onclick="seg(this)">非課税</button>
+              </div>
+              <span style="font-size:12px;color:var(--muted)" class="num">税抜 ¥11,300 / 消費税 ¥1,130</span>
+            </div>
+          </div>
+
+          <div class="f-row" onmouseenter="lite('h-invoice',this)" onmouseleave="dark()">
+            <div class="f-l">登録番号</div>
+            <div class="f-c">
+              <input class="f-in n" value="T3120001098765" style="max-width:190px">
+              <span class="tag tag-fixed">適格請求書</span>
+            </div>
+          </div>
+
+          <div class="f-row">
+            <div class="f-l">勘定科目</div>
+            <div class="f-c">
+              <select class="f-in" style="max-width:190px">
+                <option>消耗品費</option><option>材料費</option><option>工具器具備品</option>
+                <option>車両費</option><option>旅費交通費</option><option>会議費</option><option>外注費</option>
+              </select>
+              <span class="conf conf-mid"><i></i>88%</span>
+              <span style="font-size:11.5px;color:var(--muted)">前回もこの科目でした</span>
+            </div>
+          </div>
+
+          <div class="f-row">
+            <div class="f-l">摘要</div>
+            <div class="f-c"><input class="f-in" value="養生テープ・マスカー他 資材購入"></div>
+          </div>
+
+          <div class="f-row">
+            <div class="f-l">支払方法</div>
+            <div class="f-c">
+              <select class="f-in" style="max-width:190px"><option>従業員立替</option><option>現金</option><option>法人カード</option><option>口座振替</option></select>
+              <span style="font-size:11.5px;color:var(--muted)">山本 蓮 さんへ返金</span>
+            </div>
+          </div>
+
+          <div class="f-row" style="border-bottom:none">
+            <div class="f-l">現場</div>
+            <div class="f-c">
+              <select class="f-in" style="max-width:230px"><option>堺市西区 K様邸 外壁塗装</option><option>共通経費（現場なし）</option></select>
+            </div>
+          </div>
+
+          <div class="slip-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <div>2026/07/24 17:58 に受け取りました。画像は変更できない形で保管しています（電子帳簿保存法のスキャナ保存に対応）。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="match-f">
+      <button class="btn btn-ghost" onclick="toast('あとまわしにしました');nextMatch()">あとで見る</button>
+      <button class="btn btn-ghost" onclick="toast('差し戻しました。提出者に通知します')">提出者に聞く</button>
+      <div class="spacer"></div>
+      <span class="kbd">Enter</span>
+      <button class="btn btn-primary" onclick="toast('確定しました');nextMatch()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg>
+        確定して次へ
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><span id="toast-t"></span></div>
+
+<script>
+/* ══════ データ ══════ */
+const RECENT=[
+  ['07/24','日本ペイント商事 堺','材料費',164800,'fixed'],
+  ['07/24','ENEOS 中百舌鳥SS','車両費',8240,'fixed'],
+  ['07/24','コメリ 堺インター店','消耗品費',12430,'check'],
+  ['07/23','レンタルのニッケン','賃借料',44000,'fixed'],
+  ['07/23','西日本高速道路(ETC)','旅費交通費',3120,'fixed'],
+  ['07/22','タイムズ 堺東第3','旅費交通費',1100,'check'],
+];
+const KMK=[
+  ['材料費',486200,'#1C3D5A'],['外注費',312000,'#2C6284'],['車両費',148600,'#4A88AC'],
+  ['消耗品費',96400,'#D0402F'],['賃借料',88000,'#E0705F'],['旅費交通費',62300,'#B8791C'],
+  ['会議費',34100,'#1F7A5C'],['その他',57000,'#A8A399'],
+];
+const INBOX=[
+  ['07/24','コメリ 堺インター店',12430,'消耗品費',97,'山本','ok'],
+  ['07/24','ローソン 堺東駅前店',1840,'会議費',94,'山本','ok'],
+  ['07/23','◯◯塗装工業（手書領収書）',88000,'外注費',61,'田村','warn'],
+  ['07/23','タイムズ 堺東第3',1100,'旅費交通費',96,'山本','ok'],
+  ['07/23','カインズ 泉北店',7680,'消耗品費',95,'田村','ok'],
+  ['07/22','個人商店 山田金物',4300,'消耗品費',72,'中西','warn'],
+  ['07/22','JR西日本 天王寺',1420,'旅費交通費',98,'中西','ok'],
+  ['07/22','スギ薬局 中百舌鳥',2980,'福利厚生費',89,'山本','ok'],
+  ['07/21','ダイキアクシス 堺','材料費',36400,'消耗品費'===''?90:93,'田村','ok'],
+  ['07/21','出光 深井SS',7120,'車両費',97,'中西','ok'],
+  ['07/20','セブンイレブン 堺市役所前',680,'会議費',91,'山本','ok'],
+  ['07/20','アスクル',18900,'事務用品費',96,'田中','ok'],
+];
+const LIST=[
+  ['07/24','日本ペイント商事 堺','T2120001034567','材料費','外壁用シリコン塗料 一式',149818,14982,164800,'山本','fixed'],
+  ['07/24','ENEOS 中百舌鳥SS','T7120001077889','車両費','軽油 給油',7491,749,8240,'山本','fixed'],
+  ['07/24','コメリ 堺インター店','T3120001098765','消耗品費','養生テープ・マスカー他',11300,1130,12430,'山本','check'],
+  ['07/23','レンタルのニッケン','T4120001022334','賃借料','足場資材レンタル 7月分',40000,4000,44000,'田村','fixed'],
+  ['07/23','西日本高速道路','T1010001034388','旅費交通費','ETC 阪和道',2836,284,3120,'田村','fixed'],
+  ['07/23','◯◯塗装工業','— 未取得','外注費','7月度 塗装外注',80000,8000,88000,'田村','warn'],
+  ['07/22','タイムズ24','T9010001110000','旅費交通費','コインパーキング',1000,100,1100,'山本','check'],
+  ['07/22','ローソン 堺東駅前店','T6120001055443','会議費','打合せ 飲料',1704,136,1840,'山本','fixed'],
+  ['07/21','出光 深井SS','T5120001066554','車両費','ガソリン 給油',6473,647,7120,'中西','fixed'],
+  ['07/20','アスクル','T8010001099887','事務用品費','コピー用紙・文具',17182,1718,18900,'田中','fixed'],
+];
+const RULES=[
+  ['コメリ / カインズ / コーナン','消耗品費',34],
+  ['ENEOS / 出光 / apollostation','車両費',28],
+  ['タイムズ / 三井のリパーク','旅費交通費',22],
+  ['日本ペイント / エスケー化研','材料費',19],
+  ['レンタルのニッケン / アクティオ','賃借料',11],
+];
+const CHIPS=['材料費','外注費','車両費','消耗品費','工具器具備品','賃借料','旅費交通費','会議費','接待交際費','福利厚生費','事務用品費','通信費','水道光熱費','荷造運賃','修繕費','支払手数料','新聞図書費','雑費'];
+
+const yen=n=>'¥'+n.toLocaleString('ja-JP');
+const TAGS={fixed:['tag-fixed','確定ずみ'],check:['tag-check','確認まち'],warn:['tag-warn','要チェック'],draft:['tag-draft','下書き']};
+const tagHtml=s=>`<span class="tag ${TAGS[s][0]}">${TAGS[s][1]}</span>`;
+
+/* ══════ 描画 ══════ */
+document.getElementById('recent-rows').innerHTML=RECENT.map(r=>
+  `<tr><td class="num">${r[0]}</td><td>${r[1]}</td><td><span class="kmk-tag">${r[2]}</span></td>
+   <td class="t-r money">${yen(r[3])}</td><td>${tagHtml(r[4])}</td></tr>`).join('');
+
+const kmax=Math.max(...KMK.map(k=>k[1]));
+document.getElementById('kmk-bars').innerHTML=KMK.map((k,i)=>
+  `<div class="kmk-row"><div class="kmk-n">${k[0]}</div>
+   <div class="kmk-bar"><div class="kmk-fill" style="width:${k[1]/kmax*100}%;background:${k[2]};animation-delay:${i*.06}s"></div></div>
+   <div class="kmk-v">${yen(k[1])}</div></div>`).join('');
+
+document.getElementById('inbox-cards').innerHTML=INBOX.map((c,i)=>{
+  const cl=c[4]>=93?'conf-hi':c[4]>=75?'conf-mid':'conf-lo';
+  return `<button class="rcard" onclick="openMatch(${i})">
+    <div class="rcard-thumb"><div class="mini">
+      <div class="mini-h">${c[1].slice(0,11)}</div>
+      <div class="mini-l"><span>品目 A</span><span>1,280</span></div>
+      <div class="mini-l"><span>品目 B</span><span>2,480</span></div>
+      <div class="mini-l"><span>品目 C</span><span>3,980</span></div>
+      <div class="mini-t"><span>合計</span><span>${c[2].toLocaleString()}</span></div>
+    </div></div>
+    <div class="rcard-b">
+      <div class="rcard-top"><span class="rcard-date">${c[0]}</span><span class="rcard-amt">${yen(c[2])}</span></div>
+      <div class="rcard-shop">${c[1]}</div>
+      <div class="rcard-meta">
+        <span class="kmk-tag">${c[3]}</span>
+        <span class="conf ${cl}"><i></i>${c[4]}%</span>
+        ${c[6]==='warn'?'<span class="tag tag-warn">番号なし</span>':''}
+      </div>
+      <div class="who-chip">${c[5]}さんが提出</div>
+    </div></button>`;
+}).join('');
+
+document.getElementById('list-rows').innerHTML=LIST.map(r=>
+  `<tr><td class="num">${r[0]}</td><td>${r[1]}</td>
+   <td class="num" style="font-size:11px;color:${r[2].includes('未')?'var(--vermilion)':'var(--muted)'}">${r[2]}</td>
+   <td><span class="kmk-tag">${r[3]}</span></td><td style="color:var(--muted)">${r[4]}</td>
+   <td class="t-r money">${yen(r[5])}</td><td class="t-r money" style="color:var(--muted)">${yen(r[6])}</td>
+   <td class="t-r money" style="font-weight:700">${yen(r[7])}</td>
+   <td style="color:var(--muted)">${r[8]}</td><td>${tagHtml(r[9])}</td></tr>`).join('');
+
+document.getElementById('rule-rows').innerHTML=RULES.map(r=>
+  `<tr><td style="font-size:12px">${r[0]}</td><td><span class="kmk-tag">${r[1]}</span></td>
+   <td class="t-r num" style="color:var(--muted)">${r[2]}回</td></tr>`).join('');
+
+document.getElementById('kmk-chips').innerHTML=CHIPS.map(c=>`<span class="kmk-tag">${c}</span>`).join('');
+
+/* ══════ 操作 ══════ */
+function go(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setMode(m,el){
+  document.querySelectorAll('.mode-switch button').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('office').style.display=m==='office'?'':'none';
+  document.getElementById('field').style.display=m==='field'?'':'none';
+  closeScan();
+}
+let mi=1;
+function openMatch(i){
+  mi=(i||0)+1;
+  document.getElementById('m-i').textContent=mi;
+  document.getElementById('overlay').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeMatch(){
+  document.getElementById('overlay').classList.remove('on');
+  document.body.style.overflow='';
+  dark();
+}
+function nextMatch(){
+  if(mi>=12){closeMatch();toast('12件すべて確定しました。おつかれさまでした');return}
+  mi++;document.getElementById('m-i').textContent=mi;
+}
+function lite(id,row){
+  dark();
+  document.getElementById(id).classList.add('lit');
+  row.classList.add('focus');
+}
+function dark(){
+  document.querySelectorAll('.hl').forEach(h=>h.classList.remove('lit'));
+  document.querySelectorAll('.f-row').forEach(r=>r.classList.remove('focus'));
+}
+function seg(el){
+  el.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+let tt;
+function toast(msg){
+  clearTimeout(tt);
+  document.getElementById('toast-t').textContent=msg;
+  document.getElementById('toast').classList.add('on');
+  tt=setTimeout(()=>document.getElementById('toast').classList.remove('on'),2600);
+}
+let timers=[];
+function startScan(){
+  const sv=document.getElementById('scanView');
+  sv.classList.add('on');
+  ['s1','s2','s3','s4'].forEach(id=>document.getElementById(id).classList.remove('done'));
+  timers.forEach(clearTimeout);timers=[];
+  [['s1',700],['s2',1400],['s3',2100],['s4',2800]].forEach(([id,t])=>
+    timers.push(setTimeout(()=>document.getElementById(id).classList.add('done'),t)));
+  timers.push(setTimeout(()=>{
+    sv.classList.remove('on');
+    document.getElementById('doneView').classList.add('on');
+  },3700));
+}
+function closeScan(){
+  timers.forEach(clearTimeout);timers=[];
+  document.getElementById('scanView').classList.remove('on');
+  document.getElementById('doneView').classList.remove('on');
+}
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('overlay').classList.contains('on'))return;
+  if(e.key==='Escape')closeMatch();
+  if(e.key==='Enter'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='SELECT'){toast('確定しました');nextMatch()}
+});
+</script>
+</body>
+</html>
